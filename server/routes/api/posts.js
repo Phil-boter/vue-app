@@ -1,43 +1,39 @@
 const express = require("express");
-const mongodb = require("mongodb");
-const secrets = require("../../../secrets.json");
 const router = express.Router();
+
+// post model
+
+const Post = require("../../model/Post");
 
 // get posts
 
-router.get("/", async (req, res) => {
-	const posts = await loadPostsCollection();
-	res.send(await posts.find({}).toArray());
+router.get("/", (req, res) => {
+	console.log("get post");
+	Post.find()
+		.sort({ date: -1 })
+		.then((posts) => res.json(posts));
 });
 
 // add post
 
-router.post("/", async (req, res) => {
-	const posts = await loadPostsCollection();
-	await posts.insertOne({
+router.post("/", (req, res) => {
+	console.log("post posts", req.body.text);
+	const newPost = new Post({
 		text: req.body.text,
-		createdAt: new Date(),
 	});
-	res.status(201).send();
+	newPost.save().then((post) => {
+		res.json(post);
+	});
 });
 
 // delete post
 
 router.delete("/:id", async (req, res) => {
-	const posts = await loadPostsCollection();
-	await posts.deleteOne({ _id: new mongodb.ObjectID(req.params.id) }); // because _id is an object id so we have to use new moongdb.ObejctID
-	res.status(200).send();
-});
+	console.log("delete posts");
 
-async function loadPostsCollection() {
-	const client = await mongodb.MongoClient.connect(
-		`mongodb+srv://${secrets.MONGO_USER}:${secrets.MONGO_PASS}@cluster0.wglsp.mongodb.net/vue_express?retryWrites=true&w=majority`,
-		{
-			useNewUrlParser: true,
-			useUnifiedTopology: true,
-		}
-	);
-	return client.db("vue:_express").collection("posts");
-}
+	Post.findById(req.params.id)
+		.then((post) => post.remove().then(() => res.json({ success: true })))
+		.catch((err) => res.status(404).json({ success: false }));
+});
 
 module.exports = router;

@@ -11,7 +11,7 @@
 				v-model="text"
 				placeholder="create a post"
 			/>
-			<button v-on:click="createPost">Post!</button>
+			<button v-on:click.prevent="createPost">Post!</button>
 		</div>
 
 		<p class="error" v-if="error">{{ error }}</p>
@@ -54,7 +54,8 @@ export default {
 		}
 	},
 	methods: {
-		async createPost() {
+		async createPost(e) {
+			e.preventDefault();
 			await PostService.insertPost(this.text);
 			const { data } = await PostService.getPosts();
 			this.posts = data;
